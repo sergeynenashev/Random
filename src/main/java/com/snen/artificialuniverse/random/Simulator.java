@@ -1,42 +1,28 @@
 package com.snen.artificialuniverse.random;
 
-import com.snen.artificialuniverse.random.laws.LawActor;
 import com.snen.artificialuniverse.random.laws.LawsFactory;
-import com.snen.artificialuniverse.random.laws.LawsIntegrator;
-import com.snen.artificialuniverse.random.space.Space;
 import com.snen.artificialuniverse.random.space.SpaceFactory;
+import com.snen.artificialuniverse.random.space.dimensions.SingleDimension;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
+@Slf4j
 @Component
 public class Simulator {
-
-  private final Universe universe;
-  private final LawActor lawActor;
-  private final LawsIntegrator integrator;
+  private final Universe<Integer, SingleDimension> universe;
 
   @Autowired
-  public Simulator(
-      SpaceFactory spaceFactory,
-      LawsFactory lawsFactory,
-      LawActor lawActor,
-      LawsIntegrator integrator) {
-    universe = new Universe(spaceFactory.getSpace(), lawsFactory.getLaws());
-    this.lawActor = lawActor;
-    this.integrator = integrator;
+  public Simulator(SpaceFactory spaceFactory, LawsFactory lawsFactory) {
+    universe =
+        new Universe<>(
+            spaceFactory.getSpace(Integer.class, SingleDimension.class), lawsFactory.getLaws());
   }
 
   @Scheduled(fixedDelay = 100)
   public void timeStep() {
-    List<Space> transformedSpaces =
-        universe.getLaws().all().stream()
-            .map(law -> lawActor.act(law, universe.getSpace()))
-            .collect(Collectors.toList());
-    Space nextSpace = integrator.integrate(transformedSpaces);
-    universe.timeStep(nextSpace);
+    log.info("Tick...");
+    universe.timeStep();
   }
 }
